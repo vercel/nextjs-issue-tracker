@@ -27,6 +27,10 @@ export default function Bar({ data }: { data: DayData[] }) {
     []
   )
 
+  if (!data.length) {
+    return <p className="text-white">No data</p>
+  }
+
   return (
     <Chart
       options={{
