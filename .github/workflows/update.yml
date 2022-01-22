@@ -16,7 +16,7 @@ jobs:
         env:
           SECRET: ${{ env.SECRET }}
         run: |
-          curl -X POST \
+          curl -f -X POST \
             -H 'Content-Type: application/json' \
             -d '{"secret":"$SECRET"}' \
             https://nextjs-issue-tracker.vercel.app/api/populate
