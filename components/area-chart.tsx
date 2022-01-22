@@ -3,25 +3,24 @@ import { Group } from "@visx/group"
 import { AreaClosed } from "@visx/shape"
 import { AxisLeft, AxisBottom, AxisScale } from "@visx/axis"
 import { LinearGradient } from "@visx/gradient"
-import { curveMonotoneX } from "@visx/curve"
 import type { DayData } from "types"
 
 // Initialize some variables
 const axisColor = "#fff"
-const axisBottomTickLabelProps = {
+const axisBottomTickLabelProps = () => ({
   textAnchor: "middle" as const,
   fontFamily: "Arial",
   fontSize: 10,
   fill: axisColor,
-}
-const axisLeftTickLabelProps = {
+})
+const axisLeftTickLabelProps = () => ({
   dx: "-0.25em",
   dy: "0.25em",
   fontFamily: "Arial",
   fontSize: 10,
   textAnchor: "end" as const,
   fill: axisColor,
-}
+})
 
 // accessors
 const getDate = (d: DayData) => new Date(d.date)
@@ -35,8 +34,6 @@ export default function AreaChart({
   margin,
   xScale,
   yScale,
-  hideBottomAxis = false,
-  hideLeftAxis = false,
   top,
   left,
   children,
@@ -72,27 +69,22 @@ export default function AreaChart({
         strokeWidth={1}
         stroke="url(#gradient)"
         fill="url(#gradient)"
-        curve={curveMonotoneX}
       />
-      {!hideBottomAxis && (
-        <AxisBottom
-          top={yMax}
-          scale={xScale}
-          numTicks={width > 520 ? 10 : 5}
-          stroke={axisColor}
-          tickStroke={axisColor}
-          tickLabelProps={() => axisBottomTickLabelProps}
-        />
-      )}
-      {!hideLeftAxis && (
-        <AxisLeft
-          scale={yScale}
-          numTicks={5}
-          stroke={axisColor}
-          tickStroke={axisColor}
-          tickLabelProps={() => axisLeftTickLabelProps}
-        />
-      )}
+      <AxisBottom
+        top={yMax}
+        scale={xScale}
+        numTicks={width > 520 ? 10 : 5}
+        stroke={axisColor}
+        tickStroke={axisColor}
+        tickLabelProps={axisBottomTickLabelProps}
+      />
+      <AxisLeft
+        scale={yScale}
+        numTicks={5}
+        stroke={axisColor}
+        tickStroke={axisColor}
+        tickLabelProps={axisLeftTickLabelProps}
+      />
       {children}
     </Group>
   )

@@ -1,25 +1,24 @@
-import React, { useRef, useState, useMemo } from "react"
+import React, { useState, useMemo } from "react"
 import { scaleTime, scaleLinear } from "@visx/scale"
 import { Brush } from "@visx/brush"
 import { Bounds } from "@visx/brush/lib/types"
-import BaseBrush from "@visx/brush/lib/BaseBrush"
 import { PatternLines } from "@visx/pattern"
-import { LinearGradient } from "@visx/gradient"
 // @ts-ignore
 import { max, extent } from "d3-array"
 
-import AreaChart from "./area-chart"
-import AreaChartBrush from "./area-chart-brush"
+import PrimaryChart from "./area-chart"
+import SecondaryChart from "./area-chart-brush"
 import { DayData } from "types"
+import subDays from "date-fns/subDays"
 
 // Initialize some variables
 const brushMargin = { top: 10, bottom: 15, left: 50, right: 20 }
+const initialBrushSpanInDays = 500
 const chartSeparation = 30
+const accentColor = "#000"
+const chartGradientColor = "#fff"
+
 const PATTERN_ID = "brush_pattern"
-const GRADIENT_ID = "brush_gradient"
-export const accentColor = "#000"
-export const background = "#000"
-export const background2 = "#fff"
 const selectedBrushStyle = {
   fill: `url(#${PATTERN_ID})`,
   stroke: "white",
@@ -27,9 +26,9 @@ const selectedBrushStyle = {
 
 // accessors
 const getDate = (d: DayData) => new Date(d.date)
-const getStockValue = (d: DayData) => d.totalOpened
+const getDayValue = (d: DayData) => d.totalOpened
 
-export type BrushProps = {
+export interface ChartProps {
   width: number
   height: number
   margin?: { top: number; right: number; bottom: number; left: number }
@@ -37,37 +36,26 @@ export type BrushProps = {
   data: DayData[]
 }
 
-function BrushChart({
-  compact = false,
-  width,
-  height,
-  margin = {
-    top: 20,
-    left: 50,
-    bottom: 20,
-    right: 20,
-  },
-  data,
-}: BrushProps) {
-  const brushRef = useRef<BaseBrush | null>(null)
-  const [filteredStock, setFilteredStock] = useState(data)
+export default function Chart(props: ChartProps) {
+  const {
+    width,
+    height,
+    margin = { top: 20, left: 50, bottom: 20, right: 20 },
+    data,
+  } = props
 
-  const onBrushChange = (domain: Bounds | null) => {
-    if (!domain) return
-    const { x0, x1, y0, y1 } = domain
-    const stockCopy = data.filter((s) => {
-      const x = getDate(s).getTime()
-      const y = getStockValue(s)
-      return x > x0 && x < x1 && y > y0 && y < y1
+  const [filteredData, setFilteredData] = useState(() => {
+    const today = Date.now()
+    const daysAgo = subDays(today, initialBrushSpanInDays).valueOf()
+    return data.filter((s) => {
+      const x = Date.parse(s.date)
+      return x > daysAgo
     })
-    setFilteredStock(stockCopy)
-  }
+  })
 
   const innerHeight = height - margin.top - margin.bottom
-  const topChartBottomMargin = compact
-    ? chartSeparation / 2
-    : chartSeparation + 10
-  const topChartHeight = 0.9 * innerHeight - topChartBottomMargin
+  const topChartBottomMargin = chartSeparation + 10
+  const topChartHeight = 0.875 * innerHeight - topChartBottomMargin
   const bottomChartHeight = innerHeight - topChartHeight - chartSeparation
 
   // bounds
@@ -79,25 +67,17 @@ function BrushChart({
     0
   )
 
-  // scales
-  const dateScale = useMemo(
+  // X coordinates, days
+
+  const dayScale = useMemo(
     () =>
       scaleTime<number>({
         range: [0, xMax],
-        domain: extent(filteredStock, getDate) as [Date, Date],
+        domain: extent(filteredData, getDate) as [Date, Date],
       }),
-    [xMax, filteredStock]
+    [xMax, filteredData]
   )
-  const stockScale = useMemo(
-    () =>
-      scaleLinear<number>({
-        range: [yMax, 0],
-        domain: [0, max(filteredStock, getStockValue) || 0],
-        nice: true,
-      }),
-    [yMax, filteredStock]
-  )
-  const brushDateScale = useMemo(
+  const brushDayScale = useMemo(
     () =>
       scaleTime<number>({
         range: [0, xBrushMax],
@@ -105,62 +85,70 @@ function BrushChart({
       }),
     [xBrushMax]
   )
-  const brushStockScale = useMemo(
+
+  const initialBrushPosition = useMemo(() => {
+    const now = new Date()
+    return {
+      start: {
+        x: brushDayScale(subDays(now, initialBrushSpanInDays)),
+      },
+      end: { x: brushDayScale(now) },
+    }
+  }, [brushDayScale])
+
+  function onBrushChange(domain: Bounds | null) {
+    if (!domain) return
+    const { x0, x1 } = domain
+    const filteredData = data.filter((s) => {
+      const x = Date.parse(s.date)
+      return x > x0 && x < x1
+    })
+    setFilteredData(filteredData)
+  }
+
+  // Y coordinates, number of issues
+
+  const countScale = useMemo(
+    () =>
+      scaleLinear<number>({
+        range: [yMax, 0],
+        domain: [0, max(filteredData, getDayValue) || 0],
+        nice: true,
+      }),
+    [yMax, filteredData]
+  )
+
+  const brushScale = useMemo(
     () =>
       scaleLinear({
         range: [yBrushMax, 0],
-        domain: [0, max(data, getStockValue) || 0],
+        domain: [0, max(data, getDayValue) || 0],
         nice: true,
       }),
     [yBrushMax]
   )
 
-  const initialBrushPosition = useMemo(
-    () => ({
-      start: { x: brushDateScale(getDate(data[data.length - 90])) },
-      end: { x: brushDateScale(getDate(data[data.length - 1])) },
-    }),
-    [brushDateScale]
-  )
-
   return (
-    <svg width={width} height={height}>
-      <LinearGradient
-        id={GRADIENT_ID}
-        from={background}
-        to={background2}
-        rotate={45}
-        toOpacity={0.1}
-        fromOpacity={0.1}
-      />
-      <rect
-        x={0}
-        y={0}
-        width={width}
-        height={height}
-        fill={`url(#${GRADIENT_ID})`}
-        rx={14}
-      />
-      <AreaChart
-        data={filteredStock}
+    <svg width={width} height={height} className="select-none">
+      <PrimaryChart
+        data={filteredData}
         width={width}
         margin={{ ...margin, bottom: topChartBottomMargin }}
         yMax={yMax}
-        xScale={dateScale}
-        yScale={stockScale}
-        gradientColor={background2}
+        xScale={dayScale}
+        yScale={countScale}
+        gradientColor={chartGradientColor}
       />
-      <AreaChartBrush
-        hideBottomAxis
+      <SecondaryChart
         hideLeftAxis
         data={data}
         width={width}
         yMax={yBrushMax}
-        xScale={brushDateScale}
-        yScale={brushStockScale}
+        xScale={brushDayScale}
+        yScale={brushScale}
         margin={brushMargin}
         top={topChartHeight + topChartBottomMargin + margin.top}
-        gradientColor={background2}
+        gradientColor={chartGradientColor}
       >
         <PatternLines
           id={PATTERN_ID}
@@ -171,24 +159,21 @@ function BrushChart({
           orientation={["diagonal"]}
         />
         <Brush
-          xScale={brushDateScale}
-          yScale={brushStockScale}
+          xScale={brushDayScale}
+          yScale={brushScale}
           width={xBrushMax}
           height={yBrushMax}
           margin={brushMargin}
           handleSize={8}
-          innerRef={brushRef}
           resizeTriggerAreas={["left", "right"]}
           brushDirection="horizontal"
           initialBrushPosition={initialBrushPosition}
           onChange={onBrushChange}
-          onClick={() => setFilteredStock(data)}
+          onClick={() => setFilteredData(data)}
           selectedBoxStyle={selectedBrushStyle}
           useWindowMoveEvents
         />
-      </AreaChartBrush>
+      </SecondaryChart>
     </svg>
   )
 }
-
-export default BrushChart
