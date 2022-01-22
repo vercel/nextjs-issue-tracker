@@ -13,8 +13,10 @@ jobs:
     steps:
       - name: cURL request
         # Hit the webhook endpoint to add the last day's issue count
+        env:
+          SECRET: ${{ env.SECRET }}
         run: |
           curl -X POST \
             -H 'Content-Type: application/json' \
-            -d '{"secret":"${{ env.SECRET }}"}' \
+            -d '{"secret":"$SECRET"}' \
             https://nextjs-issue-tracker.vercel.app/api/populate
