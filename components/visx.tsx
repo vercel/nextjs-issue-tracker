@@ -2,12 +2,10 @@ import React, { useRef, useState, useMemo } from "react"
 import { scaleTime, scaleLinear } from "@visx/scale"
 import { Brush } from "@visx/brush"
 import { Bounds } from "@visx/brush/lib/types"
-import BaseBrush, {
-  BaseBrushState,
-  UpdateBrush,
-} from "@visx/brush/lib/BaseBrush"
+import BaseBrush from "@visx/brush/lib/BaseBrush"
 import { PatternLines } from "@visx/pattern"
 import { LinearGradient } from "@visx/gradient"
+// @ts-ignore
 import { max, extent } from "d3-array"
 
 import AreaChart from "./area-chart"
