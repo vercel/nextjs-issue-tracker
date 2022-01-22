@@ -1,0 +1,19 @@
+name: Update Issue count on a CRON Schedule
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Runs "5 minutes before midnight every day" (see https://crontab.guru/#59_23_*_*_*)
+    - cron: "55 23 * * *"
+
+jobs:
+  build:
+    name: Update Issue count
+    runs-on: ubuntu-latest
+    steps:
+      - name: cURL request
+        # Hit the webhook endpoint to add the last day's issue count
+        run: "curl -X POST \
+        -H 'Content-Type: application/json' \
+        -d '{"secret":"$SECRET"}' \
+        https://nextjs-issue-tracker.vercel.app/api/populate"
