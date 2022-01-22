@@ -56,7 +56,8 @@ export default async function handler(
         totalClosed: data.repository.totalClosed.count,
       },
     })
-    console.log("Done", result));
+
+    console.log("Done", result)
 
     return res.json(result)
   } catch (error) {

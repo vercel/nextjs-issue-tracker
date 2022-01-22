@@ -1,10 +1,10 @@
 name: Update Issue count on a CRON Schedule
 
 on:
-  workflow_dispatch:
   schedule:
     # Runs "5 minutes before midnight every day" (see https://crontab.guru/#59_23_*_*_*)
     - cron: "55 23 * * *"
+  workflow_dispatch:
 
 jobs:
   build:
