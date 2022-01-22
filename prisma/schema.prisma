@@ -1,0 +1,21 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  // provider = "postgresql"
+  // url      = env("DATABASE_URL")
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Day {
+  id          String   @id @default(cuid())
+  date        String   @unique // 2022-01-22
+  totalOpened Int
+  totalClosed Int
+  createdAt   DateTime @default(now())
+}
