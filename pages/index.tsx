@@ -26,10 +26,10 @@ export default function Home({ data }: { data: DayData[] }) {
 }
 
 export const getStaticProps: GetStaticProps = async () => {
-  const ONE_DAY = 60 * 60 * 24
+  const ONE_HOUR = 60 * 60
   const data = await prisma.day.findMany({
     select: { date: true, totalOpened: true },
   })
 
-  return { props: { data }, revalidate: ONE_DAY }
+  return { props: { data }, revalidate: ONE_HOUR }
 }

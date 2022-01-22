@@ -1,11 +1,11 @@
 import type { NextApiRequest, NextApiResponse } from "next"
 import type { Issue } from "types"
+import type { PrismaClientKnownRequestError } from "@prisma/client/runtime"
 
 import { Octokit } from "octokit"
 
 import { eachDayUntilToday, isoDate } from "utils"
 import { prisma } from "lib/prisma"
-import { PrismaClientKnownRequestError } from "@prisma/client/runtime"
 
 /**
  * git log --reverse --pretty --date=iso
@@ -30,7 +30,7 @@ export default async function handler(
     const issues = await getIssues({
       owner: req.body.owner ?? "vercel",
       repo: req.body.repo ?? "next.js",
-      hardLimitPage: req.body.page_limit ?? 2,
+      hardLimitPage: req.body.page_limit,
     })
 
     const dates = Object.fromEntries(
@@ -78,10 +78,7 @@ export default async function handler(
     return res.json(dates)
   } catch (error) {
     console.error(error)
-    if (
-      error instanceof PrismaClientKnownRequestError &&
-      error.code === "P2002"
-    ) {
+    if ((error as PrismaClientKnownRequestError).code === "P2002") {
       return res.status(400).json({ message: "Already exists" })
     }
     return res.status(500).json({ message: "Internal server error" })
