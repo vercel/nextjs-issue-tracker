@@ -16,5 +16,5 @@ jobs:
         run: |
           curl -X POST \
             -H 'Content-Type: application/json' \
-            -d '{"secret":${{ env.SECRET }}"}' \
+            -d '{"secret":"${{ env.SECRET }}"}' \
             https://nextjs-issue-tracker.vercel.app/api/populate
