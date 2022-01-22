@@ -18,5 +18,5 @@ jobs:
             --request POST \
             --header 'Content-Type: application/json' \
             --data '{"secret":\"$SECRET\"}' \
-            --fail-with-body \
+            --fail \
             https://nextjs-issue-tracker.vercel.app/api/populate
