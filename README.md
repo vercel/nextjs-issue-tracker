@@ -4,7 +4,8 @@
   </a>
 </h1
 
-![image](https://user-images.githubusercontent.com/18369201/150662435-f896c666-61f5-4df8-aa3f-f83495006193.png)
+![Screenshot of issues chart](https://user-images.githubusercontent.com/18369201/150662610-4929f664-81c0-4ae3-a9ce-f46df6c303d6.png)
+
 
 
 ## Idea
