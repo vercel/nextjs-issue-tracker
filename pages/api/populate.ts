@@ -29,7 +29,11 @@ export default async function handler(
     if (process.env.SECRET !== req.body.secret) {
       return res.status(401).json({ message: "Unauthorized" })
     }
-    console.log("Populate triggered", new Date())
+
+    const timestamp = new Date()
+    const date = isoDate(timestamp)
+
+    console.log("Populate triggered", { date, timestamp })
 
     const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN })
 
@@ -51,7 +55,7 @@ export default async function handler(
     console.log("Writing to database")
     const result = await prisma.day.create({
       data: {
-        date: isoDate(),
+        date,
         totalOpened: data.repository.totalOpened.count,
         totalClosed: data.repository.totalClosed.count,
       },
