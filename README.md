@@ -4,7 +4,7 @@
   </a>
 </h1
 
-![Screenshot of issues chart](https://user-images.githubusercontent.com/18369201/150700072-60a4aa49-9aac-4d07-a7a3-9ebc26b6e517.png)
+![Screenshot of issues chart](https://user-images.githubusercontent.com/18369201/150700115-a3c3a4aa-ecc1-4866-b5da-a020f608d590.png)
 
 ## Idea
 
