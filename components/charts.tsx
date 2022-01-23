@@ -26,7 +26,6 @@ export default withParentSize<ChartsProps>(function Charts(props) {
     data,
     initialBrushSpanInDays = 500,
     chartSeparation = 30,
-    chartGradientColor = "#fff",
   } = props
 
   const [filteredData, setFilteredData] = React.useState(() => {
@@ -47,12 +46,11 @@ export default withParentSize<ChartsProps>(function Charts(props) {
   const brushChartHeight = innerHeight - mainChartHeight - chartSeparation - 20
 
   return (
-    <svg width={width} height={height} className="select-none overflow-hidden">
+    <svg width={width} height={height} className="select-none">
       <PrimaryChart
         data={filteredData}
         width={innerWidth}
         height={mainChartHeight}
-        gradientColor={chartGradientColor}
         margin={{ ...margin, bottom: mainChartBottomMargin }}
       />
       <SecondaryChart
@@ -61,7 +59,6 @@ export default withParentSize<ChartsProps>(function Charts(props) {
         height={brushChartHeight}
         top={mainChartHeight + mainChartBottomMargin + margin.top}
         setData={setFilteredData}
-        gradientColor={chartGradientColor}
         margin={margin}
       />
     </svg>

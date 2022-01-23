@@ -18,18 +18,13 @@ import subDays from "date-fns/subDays"
 // Initialize some variables
 const axisColor = "#fff"
 
-// Initialize some variables
-const accentColor = "#000"
-
 interface BrushChartProps {
   data: DayData[]
-  gradientColor: string
   width: number
   height: number
   margin: Record<"top" | "right" | "bottom" | "left", number>
 
-  top?: number
-  left?: number
+  top: number
   initialBrushSpanInDays?: number
   setData: React.Dispatch<React.SetStateAction<DayData[]>>
 }
@@ -37,12 +32,10 @@ interface BrushChartProps {
 export default function BrushChart(props: BrushChartProps) {
   const {
     data,
-    gradientColor,
     width,
     height,
     margin,
     top,
-    left,
     initialBrushSpanInDays = 500,
     setData,
   } = props
@@ -80,22 +73,14 @@ export default function BrushChart(props: BrushChartProps) {
   }
 
   return (
-    <Group left={left || margin.left} top={top || margin.top}>
-      <LinearGradient
-        id="gradient"
-        from={gradientColor}
-        fromOpacity={1}
-        to={gradientColor}
-        toOpacity={0.2}
-      />
+    <Group left={margin.left} top={top}>
       <AreaClosed<DayData>
         data={data}
         x={(d) => xScale(getDate(d)) || 0}
         y={(d) => yScale(getDayValue(d)) || 0}
         yScale={yScale}
-        strokeWidth={1}
-        stroke="url(#gradient)"
-        fill="url(#gradient)"
+        fill="#888"
+        fillOpacity={0.8}
         curve={curveMonotoneX}
       />
       <AxisBottom
@@ -113,9 +98,9 @@ export default function BrushChart(props: BrushChartProps) {
       />
       <PatternLines
         id="brush_pattern"
-        height={8}
-        width={8}
-        stroke={accentColor}
+        height={4}
+        width={4}
+        stroke="#222"
         strokeWidth={1}
         orientation={["diagonal"]}
       />
@@ -131,7 +116,7 @@ export default function BrushChart(props: BrushChartProps) {
         initialBrushPosition={initialBrushPosition}
         onChange={onBrushChange}
         onClick={() => setData(data)}
-        selectedBoxStyle={{ fill: `url(#brush_pattern)`, stroke: "white" }}
+        selectedBoxStyle={{ fill: `url(#brush_pattern)`, stroke: "#ddd" }}
         useWindowMoveEvents
       />
     </Group>

@@ -18,6 +18,7 @@ import { scaleLinear, scaleTime } from "@visx/scale"
 
 // @ts-ignore
 import { max, extent } from "d3-array"
+import { Grid, GridColumns, GridRows } from "@visx/grid"
 
 // Initialize some variables
 const axisColor = "#fff"
@@ -39,23 +40,15 @@ const axisLeftTickLabelProps = () => ({
 export const background = "#000"
 export const accentColorDark = "#fff"
 
-const tooltipStyles = {
-  ...defaultStyles,
-  minWidth: 60,
-  backgroundColor: "rgba(0,0,0,0.9)",
-  color: "white",
-}
-
 interface MainChartProps {
   data: DayData[]
   width: number
   height: number
-  gradientColor: string
   margin: Record<"top" | "right" | "bottom" | "left", number>
 }
 
 export default function MainChart(props: MainChartProps) {
-  const { data, width, height, gradientColor, margin } = props
+  const { data, width, height, margin } = props
 
   const {
     tooltipData,
@@ -107,21 +100,39 @@ export default function MainChart(props: MainChartProps) {
 
   return (
     <Group left={margin.left} top={margin.top}>
-      <LinearGradient
-        id="gradient"
-        from={gradientColor}
-        fromOpacity={1}
-        to={gradientColor}
-        toOpacity={0}
+      <GridRows
+        scale={yScale}
+        strokeDasharray="7,2"
+        width={xMax}
+        height={yMax}
+        opacity={0.2}
       />
+      <GridColumns
+        scale={xScale}
+        strokeDasharray="7,2"
+        width={xMax}
+        height={yMax}
+        opacity={0.2}
+      />
+      <LinearGradient
+        id="main-gradient"
+        // from={"#c507b5"}
+        // to={"#c37c09"}
+        from={"#fff"}
+        to={"#222"}
+        toOpacity={0.8}
+      />
+      <defs>
+        <filter id="shadow">
+          <feDropShadow dx="0" dy="0" stdDeviation="0.5" floodColor="cyan" />
+        </filter>
+      </defs>
       <AreaClosed<DayData>
         data={data}
         x={(d) => xScale(getDate(d)) || 0}
         y={(d) => yScale(getDayValue(d)) || 0}
         yScale={yScale}
-        strokeWidth={1}
-        stroke="url(#gradient)"
-        fill="url(#gradient)"
+        fill="url(#main-gradient)"
       />
       <AxisBottom
         top={yMax}
@@ -138,6 +149,7 @@ export default function MainChart(props: MainChartProps) {
         tickStroke={axisColor}
         tickLabelProps={axisLeftTickLabelProps}
       />
+
       <Bar
         width={width}
         height={height}
@@ -149,6 +161,16 @@ export default function MainChart(props: MainChartProps) {
       />
       {tooltipData && (
         <g>
+          <Line
+            from={{ x: tooltipLeft, y: tooltipTop }}
+            to={{ x: tooltipLeft, y: height }}
+            stroke={"#000"}
+            strokeWidth={4}
+            pointerEvents="none"
+            strokeDasharray="5,5"
+            opacity={0.2}
+            style={{ filter: "blur(3px)" }}
+          />
           <Line
             from={{ x: tooltipLeft, y: tooltipTop }}
             to={{ x: tooltipLeft, y: height }}
@@ -175,14 +197,21 @@ export default function MainChart(props: MainChartProps) {
           <Portal>
             <TooltipWithBounds
               key={Math.random()}
-              top={tooltipTop + margin.top}
+              top={tooltipTop + margin.top + 72}
               left={tooltipLeft + margin.left}
-              style={tooltipStyles}
+              style={{
+                ...defaultStyles,
+                minWidth: 60,
+                color: "white",
+                backgroundColor: "#c507b5",
+                boxShadow: "0 0 8px 2px #c507b544",
+                borderRadius: 0,
+              }}
             >
               {`Open issues: ${tooltipData.totalOpened}`}
             </TooltipWithBounds>
             <Tooltip
-              top={height + margin.top - 20}
+              top={height + margin.top + 72 - 36}
               left={tooltipLeft + margin.left - 10}
               style={{
                 ...defaultStyles,
@@ -190,7 +219,9 @@ export default function MainChart(props: MainChartProps) {
                 borderRadius: 0,
                 textAlign: "center",
                 transform: "translateX(-50%)",
-                color: "black",
+                color: "#fff",
+                backgroundColor: "#c37c09",
+                boxShadow: "0 0 8px 2px #c37c0944",
               }}
             >
               {format(new Date(tooltipData.date), "yyyy MMMM dd")}
