@@ -101,7 +101,7 @@ async function getIssues(options: {
   const hardLimit = options?.hardLimitPage ?? Infinity
   console.time("Fetching issues took")
   while (page <= hardLimit) {
-    let issuesPage = await octokit.rest.issues
+    const issuesPage = await octokit.rest.issues
       .listForRepo({
         owner: options.owner,
         repo: options.repo,
@@ -114,8 +114,6 @@ async function getIssues(options: {
       console.log(
         `Page ${page} with ${issuesPage.length} issues and pull requests fetched`
       )
-
-      issuesPage = issuesPage.filter((i) => !i.pull_request)
 
       for (const issue of issuesPage) {
         // We don't care about pull requests

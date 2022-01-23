@@ -4,7 +4,7 @@ import Head from "next/head"
 
 import { prisma } from "lib/prisma"
 import { GetStaticProps } from "next"
-import Example from "components/visx"
+import Charts from "components/charts"
 
 export default function Home({ data }: { data: DayData[] }) {
   return (
@@ -14,9 +14,12 @@ export default function Home({ data }: { data: DayData[] }) {
         <link rel="icon" href="/favicon.ico" />
       </Head>
 
-      <main className="flex flex-col items-center justify-center w-full flex-1 text-center">
-        <Example width={1200} height={600} data={data} />
-        {/* <ReactChartsArea data={data} /> */}
+      <main className="flex flex-col items-center justify-center w-full flex-1 text-center overflow-hidden">
+        <Charts
+          height={800}
+          data={data}
+          margin={{ top: 20, left: 50, bottom: 20, right: 50 }}
+        />
       </main>
 
       <footer className="flex items-center justify-center w-full h-24 border-t">

@@ -1,7 +1,7 @@
-import React, { useCallback } from "react"
+import * as React from "react"
 import { Group } from "@visx/group"
 import { AreaClosed, Bar, Line } from "@visx/shape"
-import { AxisLeft, AxisBottom, AxisScale } from "@visx/axis"
+import { AxisLeft, AxisBottom } from "@visx/axis"
 import { LinearGradient } from "@visx/gradient"
 import type { DayData } from "types"
 import {
@@ -12,10 +12,12 @@ import {
   useTooltip,
 } from "@visx/tooltip"
 import { localPoint } from "@visx/event"
+import { clamp, format } from "date-fns"
+import { bisectDate, getDate, getDayValue } from "lib/visx"
+import { scaleLinear, scaleTime } from "@visx/scale"
+
 // @ts-ignore
-import { bisector } from "d3-array"
-import { ScaleTime } from "d3-scale"
-import { format } from "date-fns"
+import { max, extent } from "d3-array"
 
 // Initialize some variables
 const axisColor = "#fff"
@@ -44,44 +46,16 @@ const tooltipStyles = {
   color: "white",
 }
 
-// accessors
-const getDate = (d: DayData) => new Date(d.date)
-const getStockValue = (d: DayData) => d.totalOpened
-const bisectDate = bisector<DayData, Date>(
-  (d: DayData) => new Date(d.date)
-).left
-
 interface MainChartProps {
   data: DayData[]
-  gradientColor: string
-  xScale: ScaleTime<number, number, never>
-  yScale: AxisScale<number>
   width: number
-  yMax: number
-  margin: {
-    top: number
-    right: number
-    bottom: number
-    left: number
-  }
-  hideBottomAxis?: boolean
-  hideLeftAxis?: boolean
-  top?: number
-  left?: number
+  height: number
+  gradientColor: string
+  margin: Record<"top" | "right" | "bottom" | "left", number>
 }
 
 export default function MainChart(props: MainChartProps) {
-  const {
-    data,
-    gradientColor,
-    width,
-    yMax,
-    margin,
-    xScale,
-    yScale,
-    top,
-    left,
-  } = props
+  const { data, width, height, gradientColor, margin } = props
 
   const {
     tooltipData,
@@ -91,78 +65,82 @@ export default function MainChart(props: MainChartProps) {
     tooltipLeft = 0,
   } = useTooltip<DayData>()
 
-  const handleTooltip = useCallback(
-    (
-      event: React.TouchEvent<SVGRectElement> | React.MouseEvent<SVGRectElement>
-    ) => {
-      let { x } = localPoint(event) || { x: 0 }
+  const xMax = Math.max(width, 0)
+  const yMax = Math.max(height, 0)
 
-      const x0 = xScale.invert(x - margin.left)
+  const xScale = scaleTime<number>({
+    range: [0, xMax],
+    domain: extent(data, getDate) as [Date, Date],
+  })
 
-      const index = bisectDate(data, x0, 1)
-      const d0 = data[index - 1]
-      const d1 = data[index]
-      let d = d0
-      if (d1 && getDate(d1)) {
-        d =
-          x0.valueOf() - getDate(d0).valueOf() >
-          getDate(d1).valueOf() - x0.valueOf()
-            ? d1
-            : d0
-      }
-      showTooltip({
-        tooltipData: d,
-        tooltipLeft: x,
-        tooltipTop: yScale(d.totalOpened),
-      })
-    },
-    [xScale, margin.left, data, showTooltip, yScale]
-  )
-  if (width < 10) return null
+  const yScale = scaleLinear<number>({
+    range: [yMax, 0],
+    domain: [0, max(data, getDayValue) || 0],
+    nice: true,
+  })
 
-  const innerWidth = width - margin.left - margin.right
-  const innerHeight = 500 - margin.top - margin.bottom
+  const handleTooltip = (
+    event: React.TouchEvent<SVGRectElement> | React.MouseEvent<SVGRectElement>
+  ) => {
+    let { x } = localPoint(event) || { x: 0 }
+    x = x - margin.left
+    const x0 = xScale.invert(x)
+
+    const index = bisectDate(data, x0, 1)
+    const d0 = data[index - 1]
+    const d1 = data[index]
+    let d = d0
+    if (d1 && getDate(d1)) {
+      d =
+        x0.valueOf() - getDate(d0).valueOf() >
+        getDate(d1).valueOf() - x0.valueOf()
+          ? d1
+          : d0
+    }
+
+    showTooltip({
+      tooltipData: d,
+      tooltipLeft: Math.min(Math.max(x, 0), width),
+      tooltipTop: yScale(d.totalOpened),
+    })
+  }
 
   return (
-    <>
-      <Group left={left || margin.left} top={top || margin.top}>
-        <LinearGradient
-          id="gradient"
-          from={gradientColor}
-          fromOpacity={1}
-          to={gradientColor}
-          toOpacity={0.2}
-        />
-        <AreaClosed<DayData>
-          data={data}
-          x={(d) => xScale(getDate(d)) || 0}
-          y={(d) => yScale(getStockValue(d)) || 0}
-          yScale={yScale}
-          strokeWidth={1}
-          stroke="url(#gradient)"
-          fill="url(#gradient)"
-        />
-        <AxisBottom
-          top={yMax}
-          scale={xScale}
-          numTicks={width > 520 ? 10 : 5}
-          stroke={axisColor}
-          tickStroke={axisColor}
-          tickLabelProps={axisBottomTickLabelProps}
-        />
-        <AxisLeft
-          scale={yScale}
-          numTicks={10}
-          stroke={axisColor}
-          tickStroke={axisColor}
-          tickLabelProps={axisLeftTickLabelProps}
-        />
-      </Group>
+    <Group left={margin.left} top={margin.top}>
+      <LinearGradient
+        id="gradient"
+        from={gradientColor}
+        fromOpacity={1}
+        to={gradientColor}
+        toOpacity={0}
+      />
+      <AreaClosed<DayData>
+        data={data}
+        x={(d) => xScale(getDate(d)) || 0}
+        y={(d) => yScale(getDayValue(d)) || 0}
+        yScale={yScale}
+        strokeWidth={1}
+        stroke="url(#gradient)"
+        fill="url(#gradient)"
+      />
+      <AxisBottom
+        top={yMax}
+        scale={xScale}
+        numTicks={width > 520 ? 10 : 5}
+        stroke={axisColor}
+        tickStroke={axisColor}
+        tickLabelProps={axisBottomTickLabelProps}
+      />
+      <AxisLeft
+        scale={yScale}
+        numTicks={10}
+        stroke={axisColor}
+        tickStroke={axisColor}
+        tickLabelProps={axisLeftTickLabelProps}
+      />
       <Bar
-        x={margin.left}
-        y={margin.top}
-        width={innerWidth}
-        height={innerHeight}
+        width={width}
+        height={height}
         fill="transparent"
         onTouchStart={handleTooltip}
         onTouchMove={handleTooltip}
@@ -172,39 +150,16 @@ export default function MainChart(props: MainChartProps) {
       {tooltipData && (
         <g>
           <Line
-            from={{ x: tooltipLeft, y: tooltipTop + margin.top }}
-            to={{ x: tooltipLeft, y: innerHeight + margin.top + 10 }}
+            from={{ x: tooltipLeft, y: tooltipTop }}
+            to={{ x: tooltipLeft, y: height }}
             stroke={accentColorDark}
             strokeWidth={2}
             pointerEvents="none"
-            strokeDasharray="5,2"
+            strokeDasharray="5,5"
           />
-          <Portal>
-            <TooltipWithBounds
-              key={Math.random()}
-              top={tooltipTop + margin.top + 90}
-              left={tooltipLeft + 300 + margin.left + 10}
-              style={tooltipStyles}
-            >
-              {`Open issues: ${tooltipData.totalOpened}`}
-            </TooltipWithBounds>
-            <Tooltip
-              top={innerHeight + margin.top + 89}
-              left={tooltipLeft + 300 + margin.left}
-              style={{
-                ...defaultStyles,
-                maxWidth: 150,
-                minWidth: 72,
-                textAlign: "center",
-                transform: "translateX(-50%)",
-              }}
-            >
-              {format(new Date(tooltipData.date), "yyyy MMMM dd")}
-            </Tooltip>
-          </Portal>
           <circle
             cx={tooltipLeft}
-            cy={tooltipTop + margin.top + 1}
+            cy={tooltipTop + 1}
             r={5}
             fill="black"
             fillOpacity={0.9}
@@ -212,13 +167,37 @@ export default function MainChart(props: MainChartProps) {
           />
           <circle
             cx={tooltipLeft}
-            cy={tooltipTop + margin.top}
+            cy={tooltipTop}
             r={4}
             fill={accentColorDark}
             pointerEvents="none"
           />
+          <Portal>
+            <TooltipWithBounds
+              key={Math.random()}
+              top={tooltipTop + margin.top}
+              left={tooltipLeft + margin.left}
+              style={tooltipStyles}
+            >
+              {`Open issues: ${tooltipData.totalOpened}`}
+            </TooltipWithBounds>
+            <Tooltip
+              top={height + margin.top - 20}
+              left={tooltipLeft + margin.left - 10}
+              style={{
+                ...defaultStyles,
+                minWidth: 72,
+                borderRadius: 0,
+                textAlign: "center",
+                transform: "translateX(-50%)",
+                color: "black",
+              }}
+            >
+              {format(new Date(tooltipData.date), "yyyy MMMM dd")}
+            </Tooltip>
+          </Portal>
         </g>
       )}
-    </>
+    </Group>
   )
 }
