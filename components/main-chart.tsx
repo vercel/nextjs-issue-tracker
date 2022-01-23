@@ -47,7 +47,9 @@ const tooltipStyles = {
 // accessors
 const getDate = (d: DayData) => new Date(d.date)
 const getStockValue = (d: DayData) => d.totalOpened
-const bisectDate = bisector<DayData, Date>((d) => new Date(d.date)).left
+const bisectDate = bisector<DayData, Date>(
+  (d: DayData) => new Date(d.date)
+).left
 
 interface MainChartProps {
   data: DayData[]
@@ -89,11 +91,6 @@ export default function MainChart(props: MainChartProps) {
     tooltipLeft = 0,
   } = useTooltip<DayData>()
 
-  if (width < 10) return null
-
-  const innerWidth = width - margin.left - margin.right
-  const innerHeight = 500 - margin.top - margin.bottom
-
   const handleTooltip = useCallback(
     (
       event: React.TouchEvent<SVGRectElement> | React.MouseEvent<SVGRectElement>
@@ -119,8 +116,12 @@ export default function MainChart(props: MainChartProps) {
         tooltipTop: yScale(d.totalOpened),
       })
     },
-    [showTooltip, yScale, xScale]
+    [xScale, margin.left, data, showTooltip, yScale]
   )
+  if (width < 10) return null
+
+  const innerWidth = width - margin.left - margin.right
+  const innerHeight = 500 - margin.top - margin.bottom
 
   return (
     <>

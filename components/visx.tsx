@@ -79,7 +79,7 @@ export default function Chart(props: ChartProps) {
         range: [0, xBrushMax],
         domain: extent(data, getDate) as [Date, Date],
       }),
-    [xBrushMax]
+    [data, xBrushMax]
   )
 
   const initialBrushPosition = useMemo(() => {
@@ -121,7 +121,7 @@ export default function Chart(props: ChartProps) {
         domain: [0, max(data, getDayValue) || 0],
         nice: true,
       }),
-    [yBrushMax]
+    [data, yBrushMax]
   )
 
   return (

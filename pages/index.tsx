@@ -20,6 +20,7 @@ export default function Home({ data }: { data: DayData[] }) {
       </main>
 
       <footer className="flex items-center justify-center w-full h-24 border-t">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/vercel.svg" alt="Vercel Logo" className="h-4 ml-2" />
       </footer>
     </div>
