@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react"
+import { useState, useMemo } from "react"
 import { scaleTime, scaleLinear } from "@visx/scale"
 import { Brush } from "@visx/brush"
 import { Bounds } from "@visx/brush/lib/types"
@@ -6,13 +6,12 @@ import { PatternLines } from "@visx/pattern"
 // @ts-ignore
 import { max, extent } from "d3-array"
 
-import PrimaryChart from "./area-chart"
+import PrimaryChart from "./main-chart"
 import SecondaryChart from "./area-chart-brush"
 import { DayData } from "types"
 import subDays from "date-fns/subDays"
 
 // Initialize some variables
-const brushMargin = { top: 10, bottom: 15, left: 50, right: 20 }
 const initialBrushSpanInDays = 500
 const chartSeparation = 30
 const accentColor = "#000"
@@ -61,15 +60,12 @@ export default function Chart(props: ChartProps) {
   // bounds
   const xMax = Math.max(width - margin.left - margin.right, 0)
   const yMax = Math.max(topChartHeight, 0)
-  const xBrushMax = Math.max(width - brushMargin.left - brushMargin.right, 0)
-  const yBrushMax = Math.max(
-    bottomChartHeight - brushMargin.top - brushMargin.bottom,
-    0
-  )
+  const xBrushMax = Math.max(width - margin.left - margin.right, 0)
+  const yBrushMax = Math.max(bottomChartHeight - margin.top - margin.bottom, 0)
 
   // X coordinates, days
 
-  const dayScale = useMemo(
+  const dateScale = useMemo(
     () =>
       scaleTime<number>({
         range: [0, xMax],
@@ -77,7 +73,7 @@ export default function Chart(props: ChartProps) {
       }),
     [xMax, filteredData]
   )
-  const brushDayScale = useMemo(
+  const brushDateScale = useMemo(
     () =>
       scaleTime<number>({
         range: [0, xBrushMax],
@@ -90,11 +86,11 @@ export default function Chart(props: ChartProps) {
     const now = new Date()
     return {
       start: {
-        x: brushDayScale(subDays(now, initialBrushSpanInDays)),
+        x: brushDateScale(subDays(now, initialBrushSpanInDays)),
       },
-      end: { x: brushDayScale(now) },
+      end: { x: brushDateScale(now) },
     }
-  }, [brushDayScale])
+  }, [brushDateScale])
 
   function onBrushChange(domain: Bounds | null) {
     if (!domain) return
@@ -129,51 +125,53 @@ export default function Chart(props: ChartProps) {
   )
 
   return (
-    <svg width={width} height={height} className="select-none">
-      <PrimaryChart
-        data={filteredData}
-        width={width}
-        margin={{ ...margin, bottom: topChartBottomMargin }}
-        yMax={yMax}
-        xScale={dayScale}
-        yScale={countScale}
-        gradientColor={chartGradientColor}
-      />
-      <SecondaryChart
-        hideLeftAxis
-        data={data}
-        width={width}
-        yMax={yBrushMax}
-        xScale={brushDayScale}
-        yScale={brushScale}
-        margin={brushMargin}
-        top={topChartHeight + topChartBottomMargin + margin.top}
-        gradientColor={chartGradientColor}
-      >
-        <PatternLines
-          id={PATTERN_ID}
-          height={8}
-          width={8}
-          stroke={accentColor}
-          strokeWidth={1}
-          orientation={["diagonal"]}
+    <>
+      <svg width={width} height={height} className="select-none">
+        <PrimaryChart
+          data={filteredData}
+          width={width}
+          margin={{ ...margin, bottom: topChartBottomMargin }}
+          yMax={yMax}
+          xScale={dateScale}
+          yScale={countScale}
+          gradientColor={chartGradientColor}
         />
-        <Brush
-          xScale={brushDayScale}
+        <SecondaryChart
+          hideLeftAxis
+          data={data}
+          width={width}
+          yMax={yBrushMax}
+          xScale={brushDateScale}
           yScale={brushScale}
-          width={xBrushMax}
-          height={yBrushMax}
-          margin={brushMargin}
-          handleSize={8}
-          resizeTriggerAreas={["left", "right"]}
-          brushDirection="horizontal"
-          initialBrushPosition={initialBrushPosition}
-          onChange={onBrushChange}
-          onClick={() => setFilteredData(data)}
-          selectedBoxStyle={selectedBrushStyle}
-          useWindowMoveEvents
-        />
-      </SecondaryChart>
-    </svg>
+          margin={margin}
+          top={topChartHeight + topChartBottomMargin + margin.top}
+          gradientColor={chartGradientColor}
+        >
+          <PatternLines
+            id={PATTERN_ID}
+            height={8}
+            width={8}
+            stroke={accentColor}
+            strokeWidth={1}
+            orientation={["diagonal"]}
+          />
+          <Brush
+            xScale={brushDateScale}
+            yScale={brushScale}
+            width={xBrushMax}
+            height={yBrushMax}
+            margin={margin}
+            handleSize={8}
+            resizeTriggerAreas={["left", "right"]}
+            brushDirection="horizontal"
+            initialBrushPosition={initialBrushPosition}
+            onChange={onBrushChange}
+            onClick={() => setFilteredData(data)}
+            selectedBoxStyle={selectedBrushStyle}
+            useWindowMoveEvents
+          />
+        </SecondaryChart>
+      </svg>
+    </>
   )
 }
