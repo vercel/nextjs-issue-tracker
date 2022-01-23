@@ -33,7 +33,7 @@ export default async function handler(
     }
 
     if (process.env.SECRET !== req.body.secret) {
-      console.error(`Secret did not match`)
+      console.error(`Secret (${req.body.secret.slice(0, 4)}...) did not match`)
       return res.status(401).json({ message: "Unauthorized" })
     }
 
