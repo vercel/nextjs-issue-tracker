@@ -186,7 +186,7 @@ export default function MainChart(props: MainChartProps) {
               left={tooltipLeft + 300 + margin.left + 10}
               style={tooltipStyles}
             >
-              {`Opene issues: ${tooltipData.totalOpened}`}
+              {`Open issues: ${tooltipData.totalOpened}`}
             </TooltipWithBounds>
             <Tooltip
               top={innerHeight + margin.top + 89}
