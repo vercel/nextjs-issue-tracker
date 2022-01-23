@@ -12,6 +12,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: cURL request
+        env:
+          SECRET: ${{ secrets.SECRET }}
         # Hit the webhook endpoint to add the last day's issue count
         run: |
           curl \
