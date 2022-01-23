@@ -12,6 +12,7 @@ import {
   useTooltip,
 } from "@visx/tooltip"
 import { localPoint } from "@visx/event"
+// @ts-ignore
 import { bisector } from "d3-array"
 import { ScaleTime } from "d3-scale"
 import { format } from "date-fns"
