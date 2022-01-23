@@ -22,8 +22,13 @@ export default async function handler(
   res: NextApiResponse
 ) {
   try {
+    const timestamp = new Date()
+    const date = isoDate(timestamp)
+
+    console.log("Populate triggered", { date, timestamp })
+
     if (req.method !== "POST") {
-      console.error(`Method ${req.method} } not allowed`)
+      console.error(`Method ${req.method} not allowed`)
       return res.status(405).end("Method not allowed")
     }
 
@@ -31,11 +36,6 @@ export default async function handler(
       console.error(`Secret did not match`)
       return res.status(401).json({ message: "Unauthorized" })
     }
-
-    const timestamp = new Date()
-    const date = isoDate(timestamp)
-
-    console.log("Populate triggered", { date, timestamp })
 
     const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN })
 
