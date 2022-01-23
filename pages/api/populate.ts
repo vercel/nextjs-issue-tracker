@@ -23,10 +23,12 @@ export default async function handler(
 ) {
   try {
     if (req.method !== "POST") {
+      console.error(`Method ${req.method} } not allowed`)
       return res.status(405).end("Method not allowed")
     }
 
     if (process.env.SECRET !== req.body.secret) {
+      console.error(`Secret did not match`)
       return res.status(401).json({ message: "Unauthorized" })
     }
 
