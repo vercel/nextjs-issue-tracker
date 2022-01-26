@@ -2,9 +2,8 @@ name: Update Issue count on a CRON Schedule
 
 on:
   schedule:
-    # Runs "20 minutes after midnight, just a bit after Next.js stale issues are closed" (see https://crontab.guru/#20_0_*_*_*)
-    # https://github.com/vercel/next.js/blob/a0275f27508d5d726d8afb9ef472068b66f3484c/.github/workflows/stale.yml#L5
-    - cron: "20 0 * * *"
+    # Runs "5 minutes before midnight every day" (see https://crontab.guru/#55_23_*_*_*)
+    - cron: "55 23 * * *"
   workflow_dispatch:
 
 jobs:
