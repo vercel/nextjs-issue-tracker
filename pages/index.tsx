@@ -36,18 +36,12 @@ export default function Home({ data }: { data: DayData[] }) {
 }
 
 export const getStaticProps: GetStaticProps = async () => {
-  const ONE_HOUR = 60 * 60
   const data = await prisma.day.findMany({
     select: { date: true, totalOpened: true },
   })
 
   const result = changeAccuracy(data, "day")
-  return {
-    props: {
-      data: result,
-    },
-    revalidate: ONE_HOUR,
-  }
+  return { props: { data: result } }
 }
 
 function changeAccuracy(data: DayData[], accuracy: "day" | "week" | "month") {

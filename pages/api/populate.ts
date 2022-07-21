@@ -63,6 +63,8 @@ export default async function handler(
       },
     })
 
+    await res.revalidate("/")
+
     console.log("Done", result)
 
     return res.json(result)
