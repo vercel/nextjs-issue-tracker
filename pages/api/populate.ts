@@ -50,18 +50,35 @@ export default async function handler(
           totalClosed: issues(states: CLOSED) {
             count: totalCount
           }
+          totalOpenedPR: pullRequests(states: OPEN) {
+            count: totalCount
+          }
+          totalClosedPR: pullRequests(states: CLOSED) {
+            count: totalCount
+          }
         }
       }`
     )
 
     console.log("Writing to database")
-    const result = await prisma.day.create({
-      data: {
-        date,
-        totalOpened: data.repository.totalOpened.count,
-        totalClosed: data.repository.totalClosed.count,
-      },
-    })
+
+    const [issues, pullRequests] = await Promise.all([
+      prisma.day.create({
+        data: {
+          date,
+          totalOpened: data.repository.totalOpened.count,
+          totalClosed: data.repository.totalClosed.count,
+        },
+      }),
+      prisma.dayPR.create({
+        data: {
+          date,
+          totalOpened: data.repository.totalOpened.count,
+          totalClosed: data.repository.totalClosed.count,
+        },
+      }),
+    ])
+    const result = { issues, pullRequests }
 
     await res.revalidate("/")
 

@@ -27,10 +27,13 @@ export default async function handler(
       return res.status(401).json({ message: "Unauthorized" })
     }
 
+    const isPR = req.body.type === "pr"
+
     const issues = await getIssues({
       owner: req.body.owner ?? "vercel",
       repo: req.body.repo ?? "next.js",
       hardLimitPage: req.body.page_limit,
+      isPR,
     })
 
     const dates = Object.fromEntries(
@@ -64,12 +67,14 @@ export default async function handler(
     if (req.body.skip_save) {
       console.log("Skipping save")
     } else {
-      console.log("Saving to database...")
+      console.log(`Saving ${isPR ? "pull requests" : "issues"} to database...`)
       const datesEntries = Object.entries(dates)
       const datesPromises = datesEntries.map(([date, day]) => {
-        return prisma.day.create({
-          data: { date, ...day },
-        })
+        if (isPR) {
+          return prisma.dayPR.create({ data: { date, ...day } })
+        } else {
+          return prisma.day.create({ data: { date, ...day } })
+        }
       })
       await prisma.$transaction(datesPromises)
       console.log("Saved to database")
@@ -93,13 +98,15 @@ async function getIssues(options: {
    * @default Infinity
    */
   hardLimitPage?: number
+  isPR?: boolean
 }) {
   const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN })
   const issues: Pick<Issue, "created_at" | "closed_at">[] = []
+  const type = options.isPR ? "pull requests" : "issues"
 
   let page = 1
   const hardLimit = options?.hardLimitPage ?? Infinity
-  console.time("Fetching issues took")
+  console.time(`Fetching ${type} took`)
   while (page <= hardLimit) {
     const issuesPage = await octokit.rest.issues
       .listForRepo({
@@ -116,25 +123,28 @@ async function getIssues(options: {
       )
 
       for (const issue of issuesPage) {
-        // We don't care about pull requests
-        // https://docs.github.com/en/rest/reference/issues#list-issues-assigned-to-the-authenticated-user
-        if (issue.pull_request) continue
-
-        issues.unshift({
-          closed_at: issue.closed_at,
-          created_at: issue.created_at,
-        })
+        if (options.isPR && issue.pull_request) {
+          issues.unshift({
+            closed_at: issue.closed_at,
+            created_at: issue.created_at,
+          })
+        } else {
+          issues.unshift({
+            closed_at: issue.closed_at,
+            created_at: issue.created_at,
+          })
+        }
       }
       page += 1
     } else {
       console.log(
-        `Reached last page: ${page - 1}, fetched ${issues.length} issues`
+        `Reached last page: ${page - 1}, fetched ${issues.length} ${type}`
       )
 
       break
     }
   }
-  console.timeEnd("Fetching issues took")
+  console.timeEnd(`Fetching ${type} took`)
 
   return issues
 }
