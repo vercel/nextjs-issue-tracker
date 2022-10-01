@@ -7,14 +7,14 @@ import { prisma } from "lib/prisma"
 import { isoDate } from "utils"
 
 interface TotalCountResult {
-  repository: {
-    totalOpened: {
-      count: number
-    }
-    totalClosed: {
-      count: number
-    }
-  }
+  repository: Record<
+    | "totalOpened"
+    | "totalClosed"
+    | "totalOpenedPR"
+    | "totalClosedPR"
+    | "totalMergedPR",
+    { count: number }
+  >
 }
 
 export default async function handler(
@@ -56,6 +56,9 @@ export default async function handler(
           totalClosedPR: pullRequests(states: CLOSED) {
             count: totalCount
           }
+          totalMergedPR: pullRequests(states: MERGED) {
+            count: totalCount
+          }
         }
       }`
     )
@@ -73,8 +76,12 @@ export default async function handler(
       prisma.dayPR.create({
         data: {
           date,
-          totalOpened: data.repository.totalOpened.count,
-          totalClosed: data.repository.totalClosed.count,
+          totalOpened: data.repository.totalOpenedPR.count,
+          totalClosed: data.repository.totalClosedPR.count,
+          totalMerged: data.repository.totalMergedPR.count,
+          totalMergedAndClosed:
+            data.repository.totalMergedPR.count +
+            data.repository.totalClosedPR.count,
         },
       }),
     ])

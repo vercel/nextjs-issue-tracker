@@ -9,16 +9,28 @@ datasource db {
 
 model Day {
   id          String   @id @default(cuid())
-  date        String   @unique // 2022-01-22
+  date        String   @unique
   totalOpened Int
   totalClosed Int
   createdAt   DateTime @default(now())
 }
 
 model DayPR {
-  id          String   @id @default(cuid())
-  date        String   @unique // 2022-01-22
+  id                   String   @id @default(cuid())
+  date                 String   @unique
+  totalOpened          Int
+  totalClosed          Int
+  createdAt            DateTime @default(now())
+  totalMerged          Int
+  totalMergedAndClosed Int
+}
+
+model dd2f56bc_0846_58d5_81c5_18f1c4a26d5b_20221001152023_vrepl {
+  id          String   @id
+  date        String   @unique(map: "DayPR_date_key")
   totalOpened Int
   totalClosed Int
   createdAt   DateTime @default(now())
+
+  @@map("_dd2f56bc_0846_58d5_81c5_18f1c4a26d5b_20221001152023_vrepl")
 }

@@ -1,7 +1,8 @@
 import type { NextApiRequest, NextApiResponse } from "next"
 import type { Issue } from "types"
 import type { PrismaClientKnownRequestError } from "@prisma/client/runtime"
-
+import fs from "fs/promises"
+import path from "path"
 import { Octokit } from "octokit"
 
 import { eachDayUntilToday, isoDate } from "utils"
@@ -38,12 +39,25 @@ export default async function handler(
 
     const dates = Object.fromEntries(
       eachDayUntilToday(FIRST_COMMIT_DATE).map((date) => {
-        return [isoDate(date), { totalOpened: 0, totalClosed: 0 }]
+        return [
+          isoDate(date),
+          {
+            totalOpened: 0,
+            totalClosed: 0,
+            ...(isPR
+              ? {
+                  totalMerged: 0,
+                  totalMergedAndClosed: 0,
+                }
+              : undefined),
+          } as any,
+        ]
       })
     )
 
     let openedAccumulator = 0
     let closedAccumulator = 0
+    let mergedAccumulator = 0
     for (const date in dates) {
       const issuesOpened = issues.filter(
         (i) => isoDate(new Date(i.created_at)) === date
@@ -51,16 +65,31 @@ export default async function handler(
       const issuesClosed = issues.filter(
         (i) => i.closed_at && isoDate(new Date(i.closed_at)) === date
       )
-
       closedAccumulator += issuesClosed.length
+
+      let issuesMerged: Issue[] = []
+      if (isPR) {
+        issuesMerged = issues.filter(
+          (i) => i.merged_at && isoDate(new Date(i.merged_at)) === date
+        )
+        mergedAccumulator += issuesMerged.length
+      }
 
       if (issuesOpened.length) {
         openedAccumulator += issuesOpened.length
       }
 
-      openedAccumulator -= issuesClosed.length
+      const mergedAndClosed =
+        issuesClosed.length + (isPR ? issuesMerged.length : 0)
+
+      openedAccumulator -= mergedAndClosed
+
       dates[date].totalOpened += openedAccumulator
       dates[date].totalClosed += closedAccumulator
+      if (isPR) {
+        dates[date].totalMerged += mergedAccumulator
+        dates[date].totalMergedAndClosed += mergedAndClosed
+      }
     }
 
     // http://localhost:3000/api/history?secret=SECRET&skip_save=1
@@ -69,6 +98,12 @@ export default async function handler(
     } else {
       console.log(`Saving ${isPR ? "pull requests" : "issues"} to database...`)
       const datesEntries = Object.entries(dates)
+
+      fs.writeFile(
+        path.join(process.cwd(), "data.json"),
+        JSON.stringify(datesEntries, null, 2)
+      )
+
       const datesPromises = datesEntries.map(([date, day]) => {
         if (isPR) {
           return prisma.dayPR.create({ data: { date, ...day } })
@@ -101,7 +136,7 @@ async function getIssues(options: {
   isPR?: boolean
 }) {
   const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN })
-  const issues: Pick<Issue, "created_at" | "closed_at">[] = []
+  const issues: Issue[] = []
   const type = options.isPR ? "pull requests" : "issues"
 
   let page = 1
@@ -126,6 +161,7 @@ async function getIssues(options: {
         if (options.isPR && issue.pull_request) {
           issues.unshift({
             closed_at: issue.closed_at,
+            merged_at: issue.pull_request.merged_at,
             created_at: issue.created_at,
           })
         } else {
